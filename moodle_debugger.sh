@@ -3,7 +3,7 @@
 ##
 ## This program adds echo line of file name and function name plus sql to related php file of Moodle.
 ##
-## Version 0.1.0
+## Version 0.1.1
 ##
 ## Copyright (C) 2020 Shintaro Fujiwara
 ##
@@ -24,6 +24,7 @@
 
 HTML_DIR="/var/www/html"
 DIR_ORIG="${HTML_DIR}/moodle"
+DIR_ANS=""
 DEBUG_STR="debug"
 USER="apache"
 DIR="${HTML_DIR}/moodle_${DEBUG_STR}"
@@ -34,18 +35,18 @@ FILELIST_PHP="/tmp/filelist_php"
 function confirm_question()
 {
     if [ -z "${1}" ]; then
-        ANS="${DIR_ORIG}"
+        DIR_ANS="${DIR_ORIG}"
     else
-        ANS="${1}"
+        DIR_ANS="${1}"
     fi
-    if [ ! -d "${ANS}" ]; then
-        echo "Directory ${ANS} does not exist"
+    if [ ! -d "${DIR_ANS}" ]; then
+        echo "Directory ${DIR_ANS} does not exist"
         ask_question
     fi
-    echo -n "Are you shure with this directory? ${ANS} (Y/n)[n]:"
+    echo -n "Are you shure with this directory? ${DIR_ANS} (Y/n)[n]:"
     read ANS2
     if [ "${ANS2}" = "Y" ] || [ "${ANS2}" = "y" ]; then
-        DIR="${ANS}_${DEBUG_STR}"
+        DIR="${DIR_ANS}_${DEBUG_STR}"
     elif [ "${ANS2}" = "n" ]; then
         ask_question
     else
@@ -77,8 +78,8 @@ else
     echo "Created ${DIR}"
 fi
 trap "echo remove directory ${DIR};rm -rf ${DIR};exit 1" 2
-echo "Copying files from ${DIR_ORIG} to ${DIR}"
-cp -arp "${DIR_ORIG}"/* "${DIR}" 
+echo "Copying files from ${DIR_ANS} to ${DIR}"
+cp -arp "${DIR_ANS}"/* "${DIR}" 
 chown ${USER}:${USER} "${DIR}"
 COMMAND="chown ${USER}:${USER} ${DIR}"
 if [ ! $? == 0 ]; then
