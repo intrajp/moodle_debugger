@@ -2,8 +2,11 @@
 
 ##
 ## This program adds echo line of file name and function name plus sql to related php file of Moodle.
-## Version 0.0.6
+##
+## Version 0.1.0
+##
 ## Copyright (C) 2020 Shintaro Fujiwara
+##
 ##  This program is free software; you can redistribute it and/or
 ##  modify it under the terms of the GNU Lesser General Public
 ##  License as published by the Free Software Foundation; either
@@ -18,9 +21,11 @@
 ##  02110-1301 USA
 ##
 
+
 HTML_DIR="/var/www/html"
 DIR_ORIG="${HTML_DIR}/moodle"
 DEBUG_STR="debug"
+USER="apache"
 DIR="${HTML_DIR}/moodle_${DEBUG_STR}"
 CONSTRUCTOR="__construct"
 EXCLUDE_FILE="setuplib.php"
@@ -37,7 +42,7 @@ function confirm_question()
         echo "Directory ${ANS} does not exist"
         ask_question
     fi
-    echo "Are you shure with this directory? ${ANS}:(Y/n)[n]"
+    echo -n "Are you shure with this directory? ${ANS} (Y/n)[n]:"
     read ANS2
     if [ "${ANS2}" = "Y" ] || [ "${ANS2}" = "y" ]; then
         DIR="${ANS}_${DEBUG_STR}"
@@ -63,16 +68,34 @@ sleep 3
 if [ -d "${DIR}" ]; then
     rm -rf "${DIR}" 
 fi
+echo "Create ${DIR}"
 mkdir "${DIR}"
 if [ ! $? == 0 ]; then
     echo "Create ${DIR} failed."
     exit 1
+else
+    echo "Created ${DIR}"
 fi
+trap "echo remove directory ${DIR};rm -rf ${DIR};exit 1" 2
+echo "Copying files from ${DIR_ORIG} to ${DIR}"
 cp -arp "${DIR_ORIG}"/* "${DIR}" 
-chown apache:apache "${DIR}"
+chown ${USER}:${USER} "${DIR}"
+COMMAND="chown ${USER}:${USER} ${DIR}"
+if [ ! $? == 0 ]; then
+    echo "'${COMMAND}' error"
+    exit 1
+else
+    echo "'${COMMAND}' was success"
+fi
 chmod 0770 "${DIR}"
+echo "Find php files in ${DIR}"
 find "${DIR}" -type f -name "*.php" > "${FILELIST_PHP}"
+trap "echo remove directory ${DIR} and ${FILELIST_PHP};rm -rf ${DIR};rm -f ${FILELIST_PHP};exit 1" 2
 chmod 660 "${FILELIST_PHP}"
+echo "Foud php files and saved as ${FILELIST_PHP}"
+sleep 3
+echo "Add debug lines to php files in ${DIR}"
+sleep 5
 
 while read line
 do
@@ -94,6 +117,7 @@ done < "${FILELIST_PHP}"
 
 rm -f "${FILELIST_PHP}"
 
+echo ""
 echo "Now you have ${DIR} to debug your moodle."
 echo "Visit 'https://github.com/intrajp/moodle_debugger' for the usage."
 
