@@ -3,9 +3,9 @@
 ##
 ## moodle_database_tool.sh
 ##
-## This program output files in current directory in many patterns from default storage of Moodle.
+## This program outputs files in current directory in many patterns from default storage of Moodle.
 ##
-## Version 0.1.4
+## Version 0.1.5
 ##
 ## Copyright (C) 2020 Shintaro Fujiwara
 ##
@@ -34,10 +34,10 @@ USER="root"
 ## set password here
 PASSWORD=""
 ## set database name here
-DATABASE=""
+DATABASE="moodle"
 
 ####
-VIEW_COLUMNS="f.component, x.contextlevel, c.fullname, c.shortname, f.timecreated, f.timemodified, sum(f.filesize) as size_in_bytes, sum(f.filesize/1024) as size_in_kbytes, sum(f.filesize/1048576) as size_in_mbytes, sum(f.filesize/1073741824) as size_in_gbytes, sum(case when (f.filesize > 0) then 1 else 0 end) as number_of_files"
+VIEW_COLUMNS="f.component, x.contextlevel, x.instanceid, c.fullname, c.shortname, f.timecreated, f.timemodified, sum(f.filesize) as size_in_bytes, sum(f.filesize/1024) as size_in_kbytes, sum(f.filesize/1048576) as size_in_mbytes, sum(f.filesize/1073741824) as size_in_gbytes, sum(case when (f.filesize > 0) then 1 else 0 end) as number_of_files"
 FROM_TABLES="FROM mdl_files f, mdl_course c, mdl_context x"
 BIND1="f.contextid = x.id"
 BIND2="c.id = x.instanceid"
@@ -47,6 +47,9 @@ ORDER_TIMECREATED="f.timecreated"
 ORDER_MODIFIED="f.timemodified"
 DESC="DESC"
 ASC="ASC"
+FORMAT_NORMAL=";"
+FORMAT_ROW="\G"
+FORMAT="${FORMAT_ROW}"
 COMPONENT_BACKUP="f.component = \"backup\""
 COMPONENT_QUESTION="f.component = \"question\""
 COMPONENT_COURSE="f.component = \"course\""
@@ -87,27 +90,66 @@ do
     do
         if [ "${j}" -eq 0 ];then
             COMPONENT="f.component = \"backup\""
-	    COMPONENT_STRING="backup"
+            COMPONENT_STRING="backup"
         elif [ "${j}" -eq 1 ];then
             COMPONENT="f.component = \"course\""
-	    COMPONENT_STRING="course"
+            COMPONENT_STRING="course"
         elif [ "${j}" -eq 2 ];then
             COMPONENT="f.component = \"question\""
-	    COMPONENT_STRING="question"
+            COMPONENT_STRING="question"
         fi
 
         ## output file name 
         OUTPUTFILE="${DATABASE}_component_${COMPONENT_STRING}_contextlevel_${CONTEXTLEVEL_STRING}.log"
 
-	## sql (you can tweek order with above variable)
-        MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${BIND1} and ${COMPONENT} and ${CONTEXTLEVEL} and ${BIND2} ${GROUP_BY} ORDER BY ${ORDER_TIMECREATED} ${DESC}, ${ORDER_FILESIZE} ${DESC}\G"
+        ## sql (you can tweek order with above variable)
+        MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${BIND1} and ${COMPONENT} and ${CONTEXTLEVEL} and ${BIND2} ${GROUP_BY} ORDER BY ${ORDER_TIMECREATED} ${DESC}, ${ORDER_FILESIZE} ${DESC} ${FORMAT}"
 
         ## execute sql 
         eval "mysql -h ${HOST} -u ${USER} --password='${PASSWORD}' ${DATABASE} -e '${MYSQL_SQL}'" > "${OUTPUTFILE}" 2>&1
 
         ## remove unneeded strings 
         sed -i 's/<[^>]*>//g' "${OUTPUTFILE}" >/dev/null 2>&1
+
+        # Uncomment if you want to echo date string  
+        #FORMAT="${FORMAT_NORMAL}"
+
+        if [ "${FORMAT}" = "${FORMAT_NORMAL}" ]; then
+            OUTPUTFILE_DATE_FILESIZE_PRE="${OUTPUTFILE}"
+            OUTPUTFILE_DATE_FILESIZE_PRE=${OUTPUTFILE_DATE_FILESIZE_PRE//.log/}
+            OUTPUTFILE_DATE_FILESIZE="${OUTPUTFILE_DATE_FILESIZE_PRE}_date_filesize.log"
+            sed -i 's/\t/:/g' "${OUTPUTFILE}" >/dev/null 2>&1
+            TIMECREATED_DATE=0
+            TIMECREATED_DATE_PRE=0
+            SIZE_IN_BYTES=0
+            SIZE_IN_BYTES_ALL=0
+            while read line
+            do
+               TIMECREATED=$(echo "${line}" | awk -F":" '{ print $(NF-6) }')
+               SIZE_IN_BYTES=$(echo "${line}" | awk -F":" '{ print $(NF-4) }')
+               SIZE_IN_BYTES_ALL=$((SIZE_IN_BYTES_ALL + SIZE_IN_BYTES))
+               TIMECREATED_DATE=$(echo "${TIMECREATED}" | awk '{print strftime("%Y-%m-%d %H:%M",$1)}')
+               if [ "${TIMECREATED_DATE}" != "${TIMECREATED_DATE_PRE}" ]; then
+                   TIMECREATED_DATE_PRE="${TIMECREATED_DATE}"
+                   #echo "${SIZE_IN_BYTES_ALL}"
+                   echo " ==== ${TIMECREATED_DATE} ===="
+               fi
+               echo "${line}"
+            done < "${OUTPUTFILE}" > "${OUTPUTFILE_DATE_FILESIZE}"
+            sed -i 1d "${OUTPUTFILE_DATE_FILESIZE}" 
+            SIZE_IN_KBYTES_ALL=$((SIZE_IN_BYTES_ALL/1024))
+            SIZE_IN_MBYTES_ALL=$((SIZE_IN_BYTES_ALL/1024/1024))
+            SIZE_IN_GBYTES_ALL=$((SIZE_IN_BYTES_ALL/1024/1024/1024))
+            SIZE_IN_BYTES_ALL_STR="${SIZE_IN_BYTES_ALL}Bytes"
+            SIZE_IN_KBYTES_ALL_STR="${SIZE_IN_KBYTES_ALL}KBytes"
+            SIZE_IN_MBYTES_ALL_STR="${SIZE_IN_MBYTES_ALL}MBytes"
+            SIZE_IN_GBYTES_ALL_STR="${SIZE_IN_GBYTES_ALL}GBytes"
+            sed -i 1a\"${SIZE_IN_BYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            sed -i 1a\"${SIZE_IN_KBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            sed -i 1a\"${SIZE_IN_MBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            sed -i 1a\"${SIZE_IN_GBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            sed -i 1a\"Filesize\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+        fi
     done
 done
-
 exit 0
