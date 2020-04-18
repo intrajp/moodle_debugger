@@ -1,9 +1,30 @@
 # moodle_debugger
 
 ```
-##
+== moodle_database_tool.sh ==
+
 How to use
 
+Set variables below in script.
+----
+## set host here
+HOST="localhost"
+## set user here
+USER="root"
+## set password here
+PASSWORD=""
+## set database name here
+DATABASE="moodle"
+----
+
+Excecute
+./moodle_database_tool.sh
+
+Files are created in the current directory.
+
+== moodle_debugger.sh ==
+
+First, excecute
 ./moodle_debugger.sh <Moodle directory>
 
 It will create a new directory.
