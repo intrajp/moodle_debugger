@@ -5,7 +5,7 @@
 ##
 ## This program output files in current directory in many patterns from default storage of Moodle.
 ##
-## Version 0.1.3
+## Version 0.1.4
 ##
 ## Copyright (C) 2020 Shintaro Fujiwara
 ##
@@ -34,15 +34,19 @@ USER="root"
 ## set password here
 PASSWORD=""
 ## set database name here
-DATABASE="moodle"
+DATABASE=""
 
 ####
+VIEW_COLUMNS="f.component, x.contextlevel, c.fullname, c.shortname, f.timecreated, f.timemodified, sum(f.filesize) as size_in_bytes, sum(f.filesize/1024) as size_in_kbytes, sum(f.filesize/1048576) as size_in_mbytes, sum(f.filesize/1073741824) as size_in_gbytes, sum(case when (f.filesize > 0) then 1 else 0 end) as number_of_files"
+FROM_TABLES="FROM mdl_files f, mdl_course c, mdl_context x"
 BIND1="f.contextid = x.id"
 BIND2="c.id = x.instanceid"
-FROM_TABLES="FROM mdl_files f, mdl_course c, mdl_context x"
-VIEW_COLUMNS="f.component, x.contextlevel, c.fullname, c.shortname, sum(f.filesize) as size_in_bytes, sum(f.filesize/1024) as size_in_kbytes, sum(f.filesize/1048576) as size_in_mbytes, sum(f.filesize/1073741824) as size_in_gbytes, sum(case when (f.filesize > 0) then 1 else 0 end) as number_of_files"
 GROUP_BY="GROUP BY f.contextid, x.instanceid"
-ORDER_BY="ORDER BY sum(f.filesize) DESC"
+ORDER_FILESIZE="sum(f.filesize)"
+ORDER_TIMECREATED="f.timecreated"
+ORDER_MODIFIED="f.timemodified"
+DESC="DESC"
+ASC="ASC"
 COMPONENT_BACKUP="f.component = \"backup\""
 COMPONENT_QUESTION="f.component = \"question\""
 COMPONENT_COURSE="f.component = \"course\""
@@ -94,10 +98,13 @@ do
 
         ## output file name 
         OUTPUTFILE="${DATABASE}_component_${COMPONENT_STRING}_contextlevel_${CONTEXTLEVEL_STRING}.log"
-        ## sql 
-        MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${BIND1} and ${COMPONENT} and ${CONTEXTLEVEL} and ${BIND2} ${GROUP_BY} ${ORDER_BY}\G"
+
+	## sql (you can tweek order with above variable)
+        MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${BIND1} and ${COMPONENT} and ${CONTEXTLEVEL} and ${BIND2} ${GROUP_BY} ORDER BY ${ORDER_TIMECREATED} ${DESC}, ${ORDER_FILESIZE} ${DESC}\G"
+
         ## execute sql 
         eval "mysql -h ${HOST} -u ${USER} --password='${PASSWORD}' ${DATABASE} -e '${MYSQL_SQL}'" > "${OUTPUTFILE}" 2>&1
+
         ## remove unneeded strings 
         sed -i 's/<[^>]*>//g' "${OUTPUTFILE}" >/dev/null 2>&1
     done
