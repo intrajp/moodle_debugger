@@ -5,7 +5,7 @@
 ##
 ## This program outputs files in current directory in many patterns from default storage of Moodle.
 ##
-## Version 0.1.5
+## Version 0.1.6
 ##
 ## Copyright (C) 2020 Shintaro Fujiwara
 ##
@@ -123,16 +123,43 @@ do
             TIMECREATED_DATE_PRE=0
             SIZE_IN_BYTES=0
             SIZE_IN_BYTES_ALL=0
+            SIZE_IN_BYTES_DAY=0
+            FIRSTLINE=$(sed -n '1p' "${OUTPUTFILE}")
+            sed -i "\$a${FIRSTLINE}" "${OUTPUTFILE}" >/dev/null 2>&1
             while read line
             do
+               if [ "${line}" = "EOF" ]; then
+                   break
+               fi
                TIMECREATED=$(echo "${line}" | awk -F":" '{ print $(NF-6) }')
                SIZE_IN_BYTES=$(echo "${line}" | awk -F":" '{ print $(NF-4) }')
                SIZE_IN_BYTES_ALL=$((SIZE_IN_BYTES_ALL + SIZE_IN_BYTES))
+               SIZE_IN_BYTES_DAY=$((SIZE_IN_BYTES_DAY + SIZE_IN_BYTES))
                TIMECREATED_DATE=$(echo "${TIMECREATED}" | awk '{print strftime("%Y-%m-%d %H:%M",$1)}')
                if [ "${TIMECREATED_DATE}" != "${TIMECREATED_DATE_PRE}" ]; then
                    TIMECREATED_DATE_PRE="${TIMECREATED_DATE}"
-                   #echo "${SIZE_IN_BYTES_ALL}"
-                   echo " ==== ${TIMECREATED_DATE} ===="
+                   SIZE_IN_BYTES_DAY_TOP="${SIZE_IN_BYTES}"
+                   SIZE_IN_BYTES_DAY=$((SIZE_IN_BYTES_DAY - SIZE_IN_BYTES))
+                   SIZE_IN_KBYTES_DAY=$((SIZE_IN_BYTES_DAY / 1024))
+                   SIZE_IN_MBYTES_DAY=$((SIZE_IN_BYTES_DAY / 1024 / 1024))
+                   SIZE_IN_GBYTES_DAY=$((SIZE_IN_BYTES_DAY / 1024 / 1024 /1024))
+                   if [ "${SIZE_IN_BYTES_DAY}" -gt 0 ]; then
+                       echo "${SIZE_IN_BYTES_DAY}Bytes"
+                   fi
+                   if [ "${SIZE_IN_KBYTES_DAY}" -gt 0 ]; then
+                       echo "${SIZE_IN_KBYTES_DAY}KBytes"
+                   fi
+                   if [ "${SIZE_IN_MBYTES_DAY}" -gt 0 ]; then
+                       echo "${SIZE_IN_MBYTES_DAY}MBytes"
+                   fi
+                   if [ "${SIZE_IN_GBYTES_DAY}" -gt 0 ]; then
+                       echo "${SIZE_IN_GBYTES_DAY}GBytes"
+                   fi
+                   SIZE_IN_BYTES_DAY=0
+                   SIZE_IN_KBYTES_DAY=0
+                   SIZE_IN_BYTES_DAY_TOP=0
+                   echo "==== ${TIMECREATED_DATE} ===="
+                   SIZE_IN_BYTES_DAY=$((SIZE_IN_BYTES_DAY + SIZE_IN_BYTES))
                fi
                echo "${line}"
             done < "${OUTPUTFILE}" > "${OUTPUTFILE_DATE_FILESIZE}"
@@ -144,11 +171,37 @@ do
             SIZE_IN_KBYTES_ALL_STR="${SIZE_IN_KBYTES_ALL}KBytes"
             SIZE_IN_MBYTES_ALL_STR="${SIZE_IN_MBYTES_ALL}MBytes"
             SIZE_IN_GBYTES_ALL_STR="${SIZE_IN_GBYTES_ALL}GBytes"
-            sed -i 1a\"${SIZE_IN_BYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
-            sed -i 1a\"${SIZE_IN_KBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
-            sed -i 1a\"${SIZE_IN_MBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
-            sed -i 1a\"${SIZE_IN_GBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
-            sed -i 1a\"Filesize\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            if [ "${SIZE_IN_GBYTES_ALL}" -gt 0 ]; then
+                sed -i 1a\"${SIZE_IN_GBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            fi
+            if [ "${SIZE_IN_MBYTES_ALL}" -gt 0 ]; then
+                sed -i 1a\"${SIZE_IN_MBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            fi
+            if [ "${SIZE_IN_KBYTES_ALL}" -gt 0 ]; then
+                sed -i 1a\"${SIZE_IN_KBYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            fi
+            if [ "${SIZE_IN_BYTES_ALL}" -gt 0 ]; then
+                sed -i 1a\"${SIZE_IN_BYTES_ALL_STR}\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            fi
+            sed -i 1a\"Filesize_All\" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            sed -i \$d "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null 2>&1
+            sed -i \$d "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null 2>&1
+            sed -i "\$a========" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            sed -i "\$aFilesize_All" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            if [ "${SIZE_IN_BYTES_ALL}" -gt 0 ]; then
+                sed -i "\$a${SIZE_IN_BYTES_ALL_STR}" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            fi
+            if [ "${SIZE_IN_KBYTES_ALL}" -gt 0 ]; then
+                sed -i "\$a${SIZE_IN_KBYTES_ALL_STR}" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            fi
+            if [ "${SIZE_IN_MBYTES_ALL}" -gt 0 ]; then
+                sed -i "\$a${SIZE_IN_MBYTES_ALL_STR}" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            fi
+            if [ "${SIZE_IN_GBYTES_ALL}" -gt 0 ]; then
+                sed -i "\$a${SIZE_IN_GBYTES_ALL_STR}" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            fi
+            sed -i "\$a========" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null
+            sed -i "\$a${FIRSTLINE}" "${OUTPUTFILE_DATE_FILESIZE}" >/dev/null 2>&1
         fi
     done
 done
