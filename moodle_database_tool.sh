@@ -5,7 +5,7 @@
 ##
 ## This program outputs files in current directory in many patterns from default storage of Moodle.
 ##
-## Version 0.1.6
+## Version 0.1.7
 ##
 ## Copyright (C) 2020 Shintaro Fujiwara
 ##
@@ -37,10 +37,11 @@ PASSWORD=""
 DATABASE="moodle"
 
 ####
-VIEW_COLUMNS="f.component, x.contextlevel, x.instanceid, c.fullname, c.shortname, f.timecreated, f.timemodified, sum(f.filesize) as size_in_bytes, sum(f.filesize/1024) as size_in_kbytes, sum(f.filesize/1048576) as size_in_mbytes, sum(f.filesize/1073741824) as size_in_gbytes, sum(case when (f.filesize > 0) then 1 else 0 end) as number_of_files"
-FROM_TABLES="FROM mdl_files f, mdl_course c, mdl_context x"
+VIEW_COLUMNS="f.component, x.contextlevel, x.instanceid, u.username, c.fullname, c.shortname, f.timecreated, f.timemodified, sum(f.filesize) as size_in_bytes, sum(f.filesize/1024) as size_in_kbytes, sum(f.filesize/1048576) as size_in_mbytes, sum(f.filesize/1073741824) as size_in_gbytes, sum(case when (f.filesize > 0) then 1 else 0 end) as number_of_files"
+FROM_TABLES="FROM mdl_files f, mdl_course c, mdl_context x, mdl_user u"
 BIND1="f.contextid = x.id"
 BIND2="c.id = x.instanceid"
+BIND3="u.id = f.userid"
 GROUP_BY="GROUP BY f.contextid, x.instanceid"
 ORDER_FILESIZE="sum(f.filesize)"
 ORDER_TIMECREATED="f.timecreated"
@@ -103,7 +104,7 @@ do
         OUTPUTFILE="${DATABASE}_component_${COMPONENT_STRING}_contextlevel_${CONTEXTLEVEL_STRING}.log"
 
         ## sql (you can tweek order with above variable)
-        MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${BIND1} and ${COMPONENT} and ${CONTEXTLEVEL} and ${BIND2} ${GROUP_BY} ORDER BY ${ORDER_TIMECREATED} ${DESC}, ${ORDER_FILESIZE} ${DESC} ${FORMAT}"
+        MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${BIND1} and ${COMPONENT} and ${CONTEXTLEVEL} and ${BIND2} and ${BIND3} ${GROUP_BY} ORDER BY ${ORDER_TIMECREATED} ${DESC}, ${ORDER_FILESIZE} ${DESC} ${FORMAT}"
 
         ## execute sql 
         eval "mysql -h ${HOST} -u ${USER} --password='${PASSWORD}' ${DATABASE} -e '${MYSQL_SQL}'" > "${OUTPUTFILE}" 2>&1

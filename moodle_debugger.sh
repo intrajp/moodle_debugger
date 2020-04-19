@@ -3,7 +3,7 @@
 ##
 ## This program adds echo line of file name and function name plus sql to related php file of Moodle.
 ##
-## Version 0.1.6
+## Version 0.1.7
 ##
 ## Copyright (C) 2020 Shintaro Fujiwara
 ##
