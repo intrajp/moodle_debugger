@@ -1,7 +1,7 @@
 # moodle_debugger
 
 ```
-== moodle_database_tool.sh ==
+== files.sh ==
 
 How to use
 
@@ -18,7 +18,7 @@ DATABASE="moodle"
 ----
 
 Excecute
-./moodle_database_tool.sh
+./files.sh
 
 Files are created in the current directory.
 

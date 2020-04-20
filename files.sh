@@ -1,11 +1,13 @@
 #!/bin/bash
 
 ##
-## moodle_database_tool.sh
+## moodle_debugger
+##
+## files.sh
 ##
 ## This program outputs files in current directory in many patterns from default storage of Moodle.
 ##
-## Version 0.1.7
+## Version 0.1.8
 ##
 ## Copyright (C) 2020 Shintaro Fujiwara
 ##
