@@ -7,7 +7,7 @@
 ##
 ## This program outputs files in current directory in many patterns from default storage of Moodle.
 ##
-## Version 0.1.8
+## Version 0.1.9
 ##
 ## Copyright (C) 2020 Shintaro Fujiwara
 ##
@@ -28,6 +28,11 @@
 ##  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ##  02110-1301 USA
 ##
+## directory where output files are stored
+
+OUTPUTDIR_BASE="moodle_debugger_output_files"
+FILES_DIR="files"
+DIR_OUTPUT="${OUTPUTDIR_BASE}/${FILES_DIR}/"
 
 ## set host here
 HOST="localhost"
@@ -60,6 +65,15 @@ OUTPUTFILE=""
 ####
 
 #set -x
+
+function create_output_directory ()
+{
+    if [ ! -d "${DIR_OUTPUT}" ]; then
+       mkdir -p "${DIR_OUTPUT}" 
+    fi
+}
+
+create_output_directory
 
 for ((i=0;i<6;i++))
 do
@@ -103,7 +117,7 @@ do
         fi
 
         ## output file name 
-        OUTPUTFILE="${DATABASE}_component_${COMPONENT_STRING}_contextlevel_${CONTEXTLEVEL_STRING}.log"
+        OUTPUTFILE="${DIR_OUTPUT}/${DATABASE}_component_${COMPONENT_STRING}_contextlevel_${CONTEXTLEVEL_STRING}.log"
 
         ## sql (you can tweek order with above variable)
         MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${BIND1} and ${COMPONENT} and ${CONTEXTLEVEL} and ${BIND2} and ${BIND3} ${GROUP_BY} ORDER BY ${ORDER_TIMECREATED} ${DESC}, ${ORDER_FILESIZE} ${DESC} ${FORMAT}"
@@ -120,7 +134,7 @@ do
         if [ "${FORMAT}" = "${FORMAT_NORMAL}" ]; then
             OUTPUTFILE_DATE_FILESIZE_PRE="${OUTPUTFILE}"
             OUTPUTFILE_DATE_FILESIZE_PRE=${OUTPUTFILE_DATE_FILESIZE_PRE//.log/}
-            OUTPUTFILE_DATE_FILESIZE="${OUTPUTFILE_DATE_FILESIZE_PRE}_date_filesize.log"
+            OUTPUTFILE_DATE_FILESIZE="${DIR_OUTPUT}/${OUTPUTFILE_DATE_FILESIZE_PRE}_date_filesize.log"
             sed -i 's/\t/:/g' "${OUTPUTFILE}" >/dev/null 2>&1
             TIMECREATED_DATE=0
             TIMECREATED_DATE_PRE=0
@@ -208,4 +222,5 @@ do
         fi
     done
 done
+
 exit 0
