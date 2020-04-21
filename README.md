@@ -1,7 +1,6 @@
 # moodle_debugger
 
 ```
-== files.sh ==
 
 How to use
 
@@ -17,10 +16,15 @@ PASSWORD=""
 DATABASE="moodle"
 ----
 
+== files.sh ==
 Excecute
 ./files.sh
 
-Files are created in the current directory.
+== user.sh ==
+Excecute
+./user.sh
+
+Files are created to the directory of output files in the current directory.
 
 == moodle_debugger.sh ==
 
