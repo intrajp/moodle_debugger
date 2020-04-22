@@ -31,7 +31,7 @@
 ## directory where output files are stored
 
 OUTPUTDIR_BASE="moodle_debugger_output_files"
-USER_DIR="user"
+USER_DIR="course"
 DIR_OUTPUT="${OUTPUTDIR_BASE}/${USER_DIR}/"
 
 ## set host here
@@ -44,9 +44,14 @@ PASSWORD=""
 DATABASE="moodle"
 
 ####
-VIEW_COLUMNS="u.*"
-FROM_TABLES="FROM mdl_user u"
-SUB_QUERY="find_in_set(u.id, (select value from mdl_config c where c.name = \"siteadmins\"))"
+DATE_START="2000-01-01"
+DATE_TODAY=$(date +%s | awk '{print strftime("%Y%m%d0000",$1)}' | date +%Y-%m-%d)
+VIEW_COLUMNS="count(id) as created_courses"
+FROM_TABLES="FROM mdl_logstore_standard_log l"
+WHERE="eventname = \"\\\core\\\event\\\course_created\""
+SUB_QUERY=""
+DATE1="UNIX_TIMESTAMP(\"${DATE_START} 00:00:00\")"
+DATE2="UNIX_TIMESTAMP(\"${DATE_TODAY} 00:00:00\")"
 BIND1=""
 BIND2=""
 BIND3=""
@@ -72,10 +77,10 @@ function create_output_directory ()
 create_output_directory
 
 ## output file name 
-OUTPUTFILE="${DIR_OUTPUT}/${DATABASE}_user_siteadmins.log"
+OUTPUTFILE="${DIR_OUTPUT}/${DATABASE}_course_created_${DATE_START}_${DATE_TODAY}.log"
 
 ## sql (you can tweek with above variable)
-MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${SUB_QUERY} ${FORMAT}"
+MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${WHERE} and timecreated BETWEEN ${DATE1} and ${DATE2} ${FORMAT}"
 
 ## execute sql 
 eval "mysql -h ${HOST} -u ${USER} --password='${PASSWORD}' ${DATABASE} -e '${MYSQL_SQL}'" > "${OUTPUTFILE}" 2>&1
