@@ -16,6 +16,13 @@ PASSWORD=""
 DATABASE="moodle"
 ----
 
+Read each script and set variables with your needs.
+Or just execute the script with default variables.
+
+== course.sh ==
+Excecute
+./course.sh
+
 == files.sh ==
 Excecute
 ./files.sh
