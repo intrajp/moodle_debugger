@@ -3,7 +3,7 @@
 ##
 ## moodle_debugger
 ##
-## user.sh
+## grade.sh
 ##
 ## This program outputs files in current directory in many patterns from default storage of Moodle.
 ##
@@ -31,8 +31,8 @@
 ## directory where output files are stored
 
 OUTPUTDIR_BASE="moodle_debugger_output_files"
-USER_DIR="user"
-DIR_OUTPUT="${OUTPUTDIR_BASE}/${USER_DIR}/"
+GRADE_DIR="grade"
+DIR_OUTPUT="${OUTPUTDIR_BASE}/${GRADE_DIR}/"
 
 ## set host here
 HOST="localhost"
@@ -44,14 +44,20 @@ PASSWORD=""
 DATABASE="moodle"
 
 ####
-VIEW_COLUMNS="u.*"
-FROM_TABLES="FROM mdl_user u"
-SUB_QUERY="find_in_set(u.id, (select value from mdl_config c where c.name = \"siteadmins\"))"
-BIND1=""
-BIND2=""
-BIND3=""
-GROUP_BY=""
-ORDER=""
+VIEW_COLUMNS="m.id as user_enrolments_id, u.id as userid, u.firstname, u.lastname, e.id enrolid, r.shortname as rolename, c.fullname, FROM_UNIXTIME('c.startdate') AS startdate, FROM_UNIXTIME('c.enddate') AS enddate, g.finalgrade, g.rawgrademax"
+FROM_TABLES="FROM mdl_user u, mdl_user_enrolments m, mdl_enrol e, mdl_course c, mdl_role_assignments s, mdl_role r , mdl_grade_items i, mdl_grade_grades g"
+WHERE=""
+SUB_QUERY=""
+BIND1="u.id = m.userid"
+BIND2="m.enrolid = e.id"
+BIND3="c.id = e.courseid"
+BIND4="s.userid = u.id"
+BIND5="s.roleid = r.id"
+BIND6="i.courseid = c.id"
+BIND7="g.itemid = i.id"
+BIND8="g.userid = u.id"
+GROUP_BY="GROUP BY m.id,u.id"
+ORDER="ORDER BY u.id, c.startdate, m.id, e.id, c.id" 
 DESC="DESC"
 ASC="ASC"
 FORMAT_NORMAL=";"
@@ -72,10 +78,10 @@ function create_output_directory ()
 create_output_directory
 
 ## output file name 
-OUTPUTFILE="${DIR_OUTPUT}/${DATABASE}_user_siteadmins.log"
+OUTPUTFILE="${DIR_OUTPUT}/${DATABASE}_grade.log"
 
 ## sql (you can tweek with above variable)
-MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${SUB_QUERY} ${FORMAT}"
+MYSQL_SQL="SELECT ${VIEW_COLUMNS} ${FROM_TABLES} WHERE ${BIND1} and ${BIND2} and ${BIND3} and ${BIND4} and ${BIND5} and ${BIND6} and ${BIND7} and ${BIND8} ${GROUP_BY} ${ORDER} ${FORMAT}"
 
 ## execute sql 
 eval "mysql -h ${HOST} -u ${USER} --password='${PASSWORD}' ${DATABASE} -e '${MYSQL_SQL}'" > "${OUTPUTFILE}" 2>&1

@@ -19,17 +19,10 @@ DATABASE="moodle"
 Read each script and set variables with your needs.
 Or just execute the script with default variables.
 
-== course.sh ==
-Excecute
-./course.sh
-
-== files.sh ==
-Excecute
-./files.sh
-
-== user.sh ==
-Excecute
-./user.sh
+course.sh
+files.sh
+grade.sh
+user.sh
 
 Files are created to the directory of output files in the current directory.
 
